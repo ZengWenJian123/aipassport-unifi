@@ -54,6 +54,14 @@ cd aipassport-unifi
 局域网 TLS 要求、凭据存储和保留设置的固件更新方式详见应用 README。
 合并镜像烧录可能重置已有设置，编译成功不代表硬件验收通过。
 
+## 烧录与 API Key
+
+请阅读[网页烧录和 API Key 教程](docs/assets/setup.zh_CN.md)，包含
+[AI Passport 网页烧录工具](https://ai-passport.folotoy.cn/tools/web-flasher/)、
+串口选择、合并镜像 `0x0`、保留设置的分段更新，以及
+[UniFi API Key 创建](https://unifi.ui.com/settings/api-keys)步骤。
+真实凭据只填写到设备，公开截图使用虚构数据。
+
 ## 分支与致谢
 
 | 分支 | 职责 |

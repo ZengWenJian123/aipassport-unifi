@@ -59,6 +59,14 @@ select a site, then close the hotspot. See the application README for LAN TLS
 requirements, credential storage and data-preserving firmware updates. A merged
 flash can reset saved settings; a successful build is not hardware acceptance.
 
+## Flashing and API keys
+
+Follow the [browser flashing and API-key guide](docs/assets/setup.md). It covers
+the [AI Passport web flasher](https://ai-passport.folotoy.cn/tools/web-flasher/),
+serial selection, the merged image at `0x0`, preserving saved settings, and
+creating a key at [UniFi API Keys](https://unifi.ui.com/settings/api-keys).
+Real credentials are entered on the device; public screenshots use fictional data.
+
 ## Branches and credits
 
 | Branch | Role |
