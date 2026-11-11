@@ -7,6 +7,9 @@ typedef enum { UNIFI_PARSE_HOSTS, UNIFI_PARSE_SITES, UNIFI_PARSE_NETWORK_SITES, 
     UNIFI_PARSE_METRICS_5M, UNIFI_PARSE_METRICS_1H,
     UNIFI_PARSE_SDWAN_CONFIG, UNIFI_PARSE_SDWAN_STATUS, UNIFI_PARSE_WAN, UNIFI_PARSE_VPN, UNIFI_PARSE_WAN_LINKS } unifi_parse_kind_t;
 
+#define UNIFI_SDWAN_CONFIG_MAX 8
+typedef struct { char id[64], type[24]; } unifi_sdwan_config_t;
+
 /* Allocate on the heap, never on the worker stack. */
 typedef struct {
     ujson_stream_t json;
@@ -17,6 +20,8 @@ typedef struct {
     char host[96], site[64], reference[64], selected_reference[64];
     char next_token[160], config_id[64], config_type[24];
     char network_candidate[64];
+    unifi_sdwan_config_t configs[UNIFI_SDWAN_CONFIG_MAX];
+    unsigned config_count;
     unsigned rows, total_count, page_base, selected_offset, selected_seen, seen;
     bool vpn_only, matched, truncated, schema_ok;
     int target_device;

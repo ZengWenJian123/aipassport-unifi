@@ -44,6 +44,22 @@ int main(void)
     config.brightness = 0; assert(!unifi_config_valid(&config)); config.brightness = 101; assert(!unifi_config_valid(&config)); config.brightness = 70;
     strcpy(config.host_id, "abcd:1234"); strcpy(config.site_id, "some-site_id"); assert(unifi_config_valid(&config));
     strcpy(config.site_id, "../other/path"); assert(!unifi_config_valid(&config));
+    /* Credential rotation/account transfer must not retain the previous target.
+     * Blank-key saves are already merged to the previous key before this call. */
+    unifi_config_t old={.poll_seconds=30,.brightness=70,.screen_timeout_sec=60};
+    strcpy(old.api_key,"fake-account-a");strcpy(old.host_id,"account-a-host");strcpy(old.site_id,"account-a-site");
+    unifi_config_t next=old;
+    next.brightness=80;unifi_config_reset_target_on_source_change(&old,&next);
+    assert(!strcmp(next.site_id,old.site_id));
+    strcpy(next.api_key,"fake-account-b");unifi_config_reset_target_on_source_change(&old,&next);
+    assert(!next.host_id[0]&&!next.site_id[0]&&!strcmp(next.api_key,"fake-account-b"));
+    next=old;next.api_key[0]=0;unifi_config_reset_target_on_source_change(&old,&next);
+    assert(!next.host_id[0]&&!next.site_id[0]);
+    next=old;next.local_api=true;unifi_config_reset_target_on_source_change(&old,&next);assert(!next.site_id[0]);
+    old.local_api=true;strcpy(old.console_url,"https://10.0.0.1");next=old;
+    strcpy(next.console_url,"https://10.0.0.2");unifi_config_reset_target_on_source_change(&old,&next);assert(!next.site_id[0]);
+    next=old;strcpy(next.site_id,"another-site");unifi_config_reset_target_on_source_change(&old,&next);
+    assert(!strcmp(next.site_id,"another-site"));
     puts("UniFi settings validation: PASS (LAN allowlist, lengths, IDs, header injection, ranges)");
     return 0;
 }

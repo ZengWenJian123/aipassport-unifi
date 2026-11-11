@@ -29,9 +29,9 @@ static void test_host_names(void){
     init(UNIFI_PARSE_SITES);
     assert(feed("{\"data\":[{\"hostId\":\"host-a\",\"siteId\":\"site-a\",\"meta\":{\"name\":\"default\",\"desc\":\"Default\"}},{\"hostId\":\"host-b\",\"siteId\":\"site-b\",\"meta\":{\"name\":\"default\"}},{\"hostId\":\"host-a\",\"siteId\":\"site-c\",\"meta\":{\"desc\":\"Lab\"}}]}",3));
     unifi_parse_init(&parser,UNIFI_PARSE_HOSTS,&snap,NULL,NULL,NULL,now);
-    assert(feed("{\"data\":[{\"reportedState\":{\"hostname\":\"old-name\",\"name\":\"Demo Office\"},\"id\":\"host-a\"},{\"id\":\"host-b\",\"reportedState\":{\"hostname\":\"Demo Home\"}},{\"id\":\"other\",\"reportedState\":null}]}",1));
-    assert(!strcmp(snap.sites[0].name,"Demo Office"));
-    assert(!strcmp(snap.sites[1].name,"Demo Home"));
+    assert(feed("{\"data\":[{\"reportedState\":{\"hostname\":\"old-name\",\"name\":\"Example Office\"},\"id\":\"host-a\"},{\"id\":\"host-b\",\"reportedState\":{\"hostname\":\"Example Home\"}},{\"id\":\"other\",\"reportedState\":null}]}",1));
+    assert(!strcmp(snap.sites[0].name,"Example Office"));
+    assert(!strcmp(snap.sites[1].name,"Example Home"));
     assert(!strcmp(snap.sites[2].name,"Lab"));
 }
 static void test_sites(void){
@@ -125,7 +125,7 @@ static void test_metric_history_gaps(void){
 static void test_sdwan(void){
     init(UNIFI_PARSE_SDWAN_CONFIG);assert(feed("{\"data\":[{\"id\":\"config-a\",\"type\":\"sdwan-hbsp\"}]}",5));assert(!strcmp(parser.config_id,"config-a"));
     init(UNIFI_PARSE_SDWAN_STATUS);
-    assert(feed("{\"data\":{\"hubs\":[{\"hostId\":\"host-a\",\"primaryWanStatus\":{\"wanId\":\"WAN1\"},\"errors\":[]}],\"spokes\":[{\"hostId\":\"host-b\",\"connections\":[{\"tunnels\":[{\"status\":\"connected\"},{\"status\":\"pending\"}]}]}],\"warnings\":[{\"type\":\"sample\"}]}}",4));
+    assert(feed("{\"data\":{\"hubs\":[{\"hostId\":\"host-a\",\"siteId\":\"site-a\",\"primaryWanStatus\":{\"wanId\":\"WAN1\"},\"errors\":[]}],\"spokes\":[{\"hostId\":\"host-b\",\"connections\":[{\"tunnels\":[{\"status\":\"connected\"},{\"status\":\"pending\"}]}]}],\"warnings\":[{\"type\":\"sample\"}]}}",4));
     assert(snap.sdwan.available&&snap.sdwan.total==2&&snap.sdwan.connected==1&&snap.sdwan.hubs==1&&snap.sdwan.spokes==1&&snap.sdwan.warnings==1);
     init(UNIFI_PARSE_SDWAN_STATUS);assert(feed("{\"data\":{\"mesh\":[]}}",4));assert(!snap.sdwan.available&&snap.sdwan.error[0]);
 }

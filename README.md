@@ -16,7 +16,7 @@ This application lives on `feature/unifi-dashboard`. The repository's `main`
 branch keeps the upstream firmware baseline and a project index.
 
 [Quick start](#quick-start) · [Pages and controls](#pages-and-controls) ·
-[Build](#build-and-validate) · [Application details](docs/development/unifi-dashboard.md)
+[Build](#build-and-validate) · [Flashing and API keys](docs/assets/setup.md) · [Application details](docs/development/unifi-dashboard.md)
 
 ## Preview
 
@@ -60,7 +60,9 @@ fields depend on console version and API permissions.
 
 ## Quick start
 
-1. Build and install the firmware using the instructions below.
+1. Follow [browser flashing and API-key setup](docs/assets/setup.md), using the
+   [official web flasher](https://ai-passport.folotoy.cn/tools/web-flasher/) and
+   [UniFi API Keys](https://unifi.ui.com/settings/api-keys).
 2. Join the `Passport-...` Wi-Fi hotspot shown on the unconfigured device.
    The current hotspot password is **`12345678`**.
 3. Open **<http://192.168.4.1>** on the phone. Stay connected if it reports no
@@ -112,6 +114,13 @@ The default screen-off timeout is **60 seconds**; options are 30 seconds,
 1 minute, 2 minutes, 5 minutes or always on. Wi-Fi and polling continue while
 the screen is off. Polling defaults to **30 seconds**; requests, caches and API
 backoff can delay fresh data.
+
+## Browser flashing and API keys
+
+The [step-by-step setup guide](docs/assets/setup.md) covers firmware preparation,
+Chrome/Edge serial access, merged versus segmented flashing, creating a UniFi key,
+and saving it on the device. Demo labels and screenshots use fictional data;
+real API credentials belong only in device setup.
 
 ## Build and validate
 
@@ -167,7 +176,8 @@ device; measure power before making battery-life claims.
 - VPN details show current connections, not all configured or historical users.
   Client scans are bounded at 300 records and report partial coverage.
 - Up to eight cloud sites and twelve devices are retained; a client page holds
-  six records. SD-WAN currently handles one configuration.
+  six records. SD-WAN scans up to eight configurations and uses the unique match
+  for the selected site; ambiguous or incomplete discovery remains unavailable.
 - LAN mode has no cloud ISP history or Site Manager SD-WAN data. Controller
   compatibility endpoints for WAN/VPN can vary by Network version.
 - Events are local observations, not the full UniFi log. Missing data remains

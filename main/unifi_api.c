@@ -24,7 +24,16 @@ static bool s_local;
 static unsigned s_maintenance;
 static char s_sdwan_id[64],s_sdwan_type[24];
 static int64_t s_sdwan_at;
-void unifi_api_reset_cache(void){s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;s_sdwan_at=0;s_sdwan_id[0]=s_sdwan_type[0]=0;s_cache_host[0]=s_cache_site[0]=s_reference[0]=0;s_local=false;}
+static unifi_sdwan_config_t s_sd_candidates[UNIFI_SDWAN_CONFIG_MAX];
+static unsigned s_sd_count,s_sd_cursor,s_sd_matches;
+static bool s_sd_scanning,s_sd_incomplete;
+static unifi_sdwan_t s_sd_match_status;
+static void reset_sdwan(void){
+    s_sdwan_at=0;s_sdwan_id[0]=s_sdwan_type[0]=0;
+    s_sd_count=s_sd_cursor=s_sd_matches=0;s_sd_scanning=s_sd_incomplete=false;
+    memset(s_sd_candidates,0,sizeof s_sd_candidates);memset(&s_sd_match_status,0,sizeof s_sd_match_status);
+}
+void unifi_api_reset_cache(void){s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;reset_sdwan();s_cache_host[0]=s_cache_site[0]=s_reference[0]=0;s_local=false;}
 typedef struct { unsigned retry; bool close; } response_headers_t;
 /* One worker-owned session per poll, never shared with the portal. */
 typedef struct { esp_http_client_handle_t client; response_headers_t headers; unifi_api_progress_cb progress; void *context; unsigned count; } http_session_t;
@@ -131,7 +140,7 @@ esp_err_t unifi_api_poll_with_progress(const unifi_config_t *cfg,unifi_snapshot_
     int64_t now=time(NULL),begin=monotonic_sec();
     if(now<1700000000){s->api_ok=false;COPY(s->error,"Waiting for valid clock (HTTPS)");return ESP_ERR_INVALID_STATE;}
     if(strcmp(s_cache_host,cfg->host_id)||strcmp(s_cache_site,cfg->site_id)||s_local!=cfg->local_api){
-        COPY(s_cache_host,cfg->host_id);COPY(s_cache_site,cfg->site_id);s_local=cfg->local_api;s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;s_sdwan_at=0;s_sdwan_id[0]=s_sdwan_type[0]=0;s_reference[0]=0;
+        COPY(s_cache_host,cfg->host_id);COPY(s_cache_site,cfg->site_id);s_local=cfg->local_api;s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;reset_sdwan();s_reference[0]=0;
         memset(s,0,sizeof(*s));
     }
     if(begin<s_retry_until){s->api_ok=false;s->http_status=429;s->retry_after_sec=(uint32_t)(s_retry_until-begin);COPY(s->error,"Rate limited; waiting before retry");return ESP_ERR_TIMEOUT;}
@@ -140,7 +149,13 @@ esp_err_t unifi_api_poll_with_progress(const unifi_config_t *cfg,unifi_snapshot_
     *work=*s;s->api_ok=true;s->error[0]=0;bool any=false;esp_err_t err;
     char url[480],base[320];http_session_t session={.progress=progress,.context=context};s->query_count=0;
     if(!cfg->local_api){
-        unifi_parse_init(p,UNIFI_PARSE_SITES,work,cfg->host_id,cfg->site_id,NULL,now);
+        /* Keep an automatically selected site stable when API ordering changes.
+         * Otherwise old telemetry could be relabelled with the new first site. */
+        const unifi_site_t *previous=s->selected_site<s->site_count?&s->sites[s->selected_site]:NULL;
+        bool automatic=!cfg->host_id[0]&&!cfg->site_id[0]&&previous;
+        unifi_parse_init(p,UNIFI_PARSE_SITES,work,
+                        automatic?previous->host_id:cfg->host_id,
+                        automatic?previous->site_id:cfg->site_id,NULL,now);
         err=get_json(cfg,"https://api.ui.com/v1/sites?pageSize=8",p,s,&session);
         connection_result(s,err,now);
         if(err!=ESP_OK){publish_progress(s,progress,context);if(s->http_status==401||s->http_status==403||s->http_status==429||s->selected_site>=s->site_count)goto finish;}
@@ -151,7 +166,7 @@ esp_err_t unifi_api_poll_with_progress(const unifi_config_t *cfg,unifi_snapshot_
             if(!p->matched){
                 memset(s,0,sizeof(*s));s->http_status=200;s->selected_site=UINT8_MAX;
                 connection_result(s,ESP_OK,now);
-                s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;s_sdwan_at=0;s_sdwan_id[0]=s_sdwan_type[0]=0;s_reference[0]=0;
+                s_metrics_at=s_hosts_at=s_mapping_at=s_vpn_retry_at=0;s_maintenance=0;reset_sdwan();s_reference[0]=0;
             }
             for(unsigned i=0;i<work->site_count;i++)for(unsigned j=0;j<s->site_count;j++){
                 if(!strcmp(work->sites[i].host_id,s->sites[j].host_id)&&!strcmp(work->sites[i].site_id,s->sites[j].site_id)){
@@ -239,20 +254,50 @@ esp_err_t unifi_api_poll_with_progress(const unifi_config_t *cfg,unifi_snapshot_
     if(cfg->local_api){s->sdwan.available=false;s->sdwan.total=s->sdwan.connected=-1;COPY(s->sdwan.error,"Local Network API does not expose Mesh status");}
     if(!cfg->local_api&&budget(begin)){
         *work=*s;
-        if(!s_sdwan_id[0]||now-s_sdwan_at>=300){
+        bool probed=false;
+        if(!s_sd_scanning&&(!s_sdwan_at||now-s_sdwan_at>=300)){
             unifi_parse_init(p,UNIFI_PARSE_SDWAN_CONFIG,work,NULL,NULL,NULL,now);
             err=get_json(cfg,"https://api.ui.com/v1/sd-wan-configs",p,s,&session);
             if(err==ESP_OK){
-                s_sdwan_id[0]=0;
-                if(p->rows==1&&(!strcmp(p->config_type,"sdwan-hbsp")||!strcmp(p->config_type,"s2s-vpn"))&&safe_segment(p->config_id)){
-                    COPY(s_sdwan_id,p->config_id);COPY(s_sdwan_type,p->config_type);s_sdwan_at=now;
-                }else{s->sdwan.available=false;s->sdwan.connected=s->sdwan.total=-1;COPY(s->sdwan.error,p->rows>1?"Multiple configurations: selection required":"No supported SD-WAN configuration");COPY(s->sdwan.type,"unsupported");}
+                reset_sdwan();s_sdwan_at=now;s_sd_count=p->config_count;
+                memcpy(s_sd_candidates,p->configs,s_sd_count*sizeof s_sd_candidates[0]);
+                s_sd_incomplete=p->truncated||p->next_token[0];s_sd_scanning=s_sd_count>0;
+                s->sdwan.available=false;
+                COPY(s->sdwan.error,s_sd_count?"Discovering SD-WAN membership":"No SD-WAN configurations");
             }else record_failure(s,"SD-WAN",err);
         }
-        if(s_sdwan_id[0]&&budget(begin)){
+        /* At most two probes per round; continue next round without blocking
+         * clients/WAN for accounts containing several independent networks. */
+        for(unsigned n=0;s_sd_scanning&&s_sd_cursor<s_sd_count&&n<2&&budget(begin);n++){
+            const unifi_sdwan_config_t *candidate=&s_sd_candidates[s_sd_cursor++];
+            if((strcmp(candidate->type,"sdwan-hbsp")&&strcmp(candidate->type,"s2s-vpn"))||!safe_segment(candidate->id)){
+                s_sd_incomplete=true;continue;
+            }
+            *work=*s;
+            snprintf(url,sizeof(url),"https://api.ui.com/v1/sd-wan-configs/%s/status",candidate->id);
+            unifi_parse_init(p,UNIFI_PARSE_SDWAN_STATUS,work,site->host_id,site->site_id,NULL,now);
+            err=get_json(cfg,url,p,s,&session);probed=true;
+            if(err!=ESP_OK){s_sd_incomplete=true;record_failure(s,"SD-WAN discovery",err);continue;}
+            if(p->sd_has_host){
+                s_sd_matches++;
+                if(s_sd_matches==1){COPY(s_sdwan_id,candidate->id);COPY(s_sdwan_type,candidate->type);s_sd_match_status=work->sdwan;}
+            }
+        }
+        if(s_sd_scanning&&s_sd_cursor==s_sd_count){
+            s_sd_scanning=false;
+            if(s_sd_matches==1&&!s_sd_incomplete){
+                s->sdwan=s_sd_match_status;COPY(s->sdwan.type,!strcmp(s_sdwan_type,"s2s-vpn")?"Mesh":"sdwan-hbsp");
+                s->sdwan.updated_epoch=now;
+            }else{
+                s_sdwan_id[0]=0;s->sdwan.available=false;s->sdwan.connected=s->sdwan.total=-1;
+                COPY(s->sdwan.error,s_sd_incomplete?"SD-WAN discovery incomplete":s_sd_matches>1?"Multiple matching SD-WAN configurations":"Site has no matching SD-WAN configuration");
+            }
+        }
+        if(!s_sd_scanning&&s_sdwan_id[0]&&!probed&&budget(begin)){
+            *work=*s;
             snprintf(url,sizeof(url),"https://api.ui.com/v1/sd-wan-configs/%s/status",s_sdwan_id);
             unifi_parse_init(p,UNIFI_PARSE_SDWAN_STATUS,work,site->host_id,site->site_id,NULL,now);err=get_json(cfg,url,p,s,&session);
-            if(err==ESP_OK){s->sdwan=work->sdwan;COPY(s->sdwan.type,!strcmp(s_sdwan_type,"s2s-vpn")?"Mesh":"sdwan-hbsp");s->sdwan.updated_epoch=time(NULL);}
+            if(err==ESP_OK){s->sdwan=work->sdwan;COPY(s->sdwan.type,!strcmp(s_sdwan_type,"s2s-vpn")?"Mesh":"sdwan-hbsp");s->sdwan.updated_epoch=time(NULL);if(!p->sd_has_host)s_sdwan_at=0;}
             else{record_failure(s,"SD-WAN status",err);COPY(s->sdwan.error,"SD-WAN status API failed; cached data");if(s->http_status==404)s_sdwan_at=0;}
         }
         publish_progress(s,progress,context);

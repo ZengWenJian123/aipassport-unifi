@@ -138,7 +138,9 @@ static esp_err_t queue_config(const unifi_config_t *config)
         strlcpy(s_connection.error, "Settings save busy; try again", sizeof(s_connection.error));
         unlock(); return ESP_ERR_INVALID_STATE;
     }
-    s_pending = *config; s_pending_valid = true; s_save_busy = true; s_save_error[0] = 0;
+    s_pending = *config;
+    unifi_config_reset_target_on_source_change(&s_config, &s_pending);
+    s_pending_valid = true; s_save_busy = true; s_save_error[0] = 0;
     unlock(); notify(APPLY_CONFIG); return ESP_OK;
 }
 

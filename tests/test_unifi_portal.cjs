@@ -53,9 +53,9 @@ const path = require('node:path');
           Object.assign(status, Object.fromEntries(Object.entries(data).filter(([k]) => !['password', 'api_key', 'ca_pem'].includes(k))));
           if (data.password) status.password_set = true;
           if (data.api_key) {
-            status.api_key_set = true; status.api_ok = true;
+            status.api_key_set = true; status.api_ok = true; status.host_id = ''; status.site_id = '';
             Object.assign(status, {connection_tested:true,connection_ok:true,connection_http:200,connection_epoch:1794110400});
-            status.sites = [{ name: 'Demo Office', host_id: 'host-1', site_id: 'site-1' }];
+            status.sites = [{ name: 'Example Office', host_id: 'host-1', site_id: 'site-1' }];
           }
           if (data.ssid) { status.wifi_connected = true; status.time_valid = true; status.ip = '192.168.10.88'; }
         }
@@ -120,6 +120,13 @@ const path = require('node:path');
     await page.locator('#save-site').click();
     await page.waitForFunction(() => document.querySelector('#message').textContent === '已保存到设备。');
     assert.equal(status.site_id, 'site-1');
+    // Backend resets an old account's target; the filled form must follow it.
+    await page.locator('#api-key').fill('fake-different-account');
+    await page.locator('#save-api').click();
+    await page.waitForFunction(() => document.querySelector('#message').textContent.includes('API 配置已保存'));
+    assert.equal(await page.locator('#host-id').inputValue(), '');
+    assert.equal(await page.locator('#site-id').inputValue(), '');
+    assert.equal(await page.locator('#api-key').inputValue(), '');
     Object.assign(status, { api_refreshing: true, api_error: '',query_stage:'Clients',query_count:4,query_http:200,query_duration_ms:1250 });
     await page.locator('#refresh-status').click();
     await page.waitForFunction(() => document.querySelector('#api-state').textContent === '正在更新监控数据');

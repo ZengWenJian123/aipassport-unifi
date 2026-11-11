@@ -88,3 +88,17 @@ static inline bool unifi_config_valid(const unifi_config_t *c)
                       !strstr(c->ca_pem, "-----END CERTIFICATE-----"))) return false;
     return true;
 }
+
+/* Called after merging a settings patch. A new credential or endpoint must
+ * rediscover its own sites, even if the request includes a stale browser ID.
+ * Empty password/key inputs are already merged by the HTTP handler. */
+static inline void unifi_config_reset_target_on_source_change(
+    const unifi_config_t *previous, unifi_config_t *next)
+{
+    if (strcmp(previous->api_key, next->api_key) ||
+        previous->local_api != next->local_api ||
+        (next->local_api && strcmp(previous->console_url, next->console_url))) {
+        memset(next->host_id, 0, sizeof(next->host_id));
+        memset(next->site_id, 0, sizeof(next->site_id));
+    }
+}

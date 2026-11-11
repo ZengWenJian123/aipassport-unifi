@@ -15,7 +15,7 @@ Wi-Fi 和 API Key，无需电脑、NAS 或 Python 网关常驻运行。
 和项目入口。
 
 [快速开始](#快速开始) · [页面与按键](#页面与按键) ·
-[编译](#编译与验证) · [应用详细说明](docs/development/unifi-dashboard.zh_CN.md)
+[编译](#编译与验证) · [烧录与 API Key](docs/assets/setup.zh_CN.md) · [应用详细说明](docs/development/unifi-dashboard.zh_CN.md)
 
 ## 界面预览
 
@@ -55,7 +55,9 @@ Wi-Fi 和 API Key，无需电脑、NAS 或 Python 网关常驻运行。
 
 ## 快速开始
 
-1. 按下方说明编译并安装固件。
+1. 按[网页烧录与 API Key 教程](docs/assets/setup.zh_CN.md)准备固件，使用
+   [官方网页烧录工具](https://ai-passport.folotoy.cn/tools/web-flasher/)和
+   [UniFi API Keys](https://unifi.ui.com/settings/api-keys)完成首次配置。
 2. 连接未配置设备屏幕上显示的 `Passport-...` Wi-Fi 热点，当前热点密码为
    **`12345678`**。
 3. 在手机浏览器打开 **<http://192.168.4.1>**。提示网络无法访问互联网时，
@@ -102,6 +104,12 @@ Wi-Fi 和 API Key，无需电脑、NAS 或 Python 网关常驻运行。
 默认 **60 秒**无按键操作后熄屏，可选 30 秒、1 分钟、2 分钟、5 分钟或常亮。
 熄屏后 Wi-Fi 与 API 轮询继续运行。默认刷新间隔为 **30 秒**，实际新数据到达
 时间还受请求耗时、缓存和 API 退避影响。
+
+## 网页烧录与 API Key
+
+[完整配置教程](docs/assets/setup.zh_CN.md)包含固件准备、Chrome/Edge 串口授权、
+合并/分段烧录区别、UniFi 密钥创建和设备配置步骤。演示名称与截图使用虚构数据，
+真实 API 凭据只在设备配置页填写。
 
 ## 编译与验证
 
@@ -152,7 +160,8 @@ API 权限和断线重连；续航结论需要实测功耗。
 - VPN 详情仅表示当前连接，不是全部已配置或历史用户。客户端扫描上限为
   300 条，达到限制会标记部分结果。
 - 最多保留八个云端站点、十二个设备；客户端显示页保留六条记录。
-  SD-WAN 当前处理一个配置。
+  SD-WAN 最多扫描八个配置，并使用所选站点的唯一匹配项；有歧义或发现不完整时
+  明确显示不可用。
 - 局域网模式没有云端 ISP 历史或 Site Manager SD-WAN 数据。用于 WAN/VPN 的
   控制器兼容接口可能随 Network 版本变化。
 - 事件是本机观察记录，不是 UniFi 完整日志；缺失数据会显示不可用，不当作零。

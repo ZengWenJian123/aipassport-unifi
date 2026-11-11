@@ -21,10 +21,10 @@
   <div class="actions"><button id="save-wifi" class="primary" type="button">保存并连接</button><button id="to-api" type="button">下一步</button></div>
  </section>
  <section id="step-1" hidden>
-  <h2>连接 UniFi</h2><p>API Key 保存在设备中。重启后自动使用，留空即可保留，无需重复输入。</p>
+  <h2>连接 UniFi</h2><p>API Key 保存在设备中。重启后自动使用，留空即可保留。更换密钥或连接方式后，会重新发现站点，请重新选择。</p>
   <label><span>连接方式</span><select id="mode"><option value="cloud">云端 Site Manager API（推荐）</option><option value="local">局域网 Network API</option></select></label>
   <div id="local-fields" hidden>
-   <label><span>控制台 HTTPS 地址</span><input id="console-url" autocomplete="off" placeholder="https://192.168.10.1"><small>只允许局域网私有 IPv4 地址，可指定端口。</small></label>
+   <label><span>控制台 HTTPS 地址</span><input id="console-url" autocomplete="off" placeholder="https://10.0.0.1"><small>只允许局域网私有 IPv4 地址，可指定端口。</small></label>
    <label><span>信任的证书 / CA（PEM）</span><textarea id="ca" autocomplete="off" maxlength="2047" placeholder="-----BEGIN CERTIFICATE-----"></textarea><small id="ca-status">留空保留已有证书；不跳过 TLS 校验。</small></label>
    <label class="check"><input id="clear-ca" type="checkbox">清除已保存的证书</label>
   </div>
@@ -128,7 +128,7 @@
  $('save-wifi').onclick=async()=>{if(!$('ssid').value){message('请输入 Wi-Fi 名称。',true);return;}const ok=await save({ssid:$('ssid').value,password:$('password').value,clear_password:$('clear-password').checked});if(ok){$('clear-password').checked=false;message('Wi-Fi 配置已保存，正在连接；请保持连接 Passport 热点。');}};
  $('to-api').onclick=()=>step(1);$('to-display').onclick=()=>step(2);
  $('mode').onchange=()=>{clearSecrets();$('local-fields').hidden=$('mode').value!=='local';};
- $('save-api').onclick=async()=>{const config={local_api:$('mode').value==='local',console_url:$('console-url').value.trim(),api_key:$('api-key').value,ca_pem:$('ca').value,clear_api_key:$('clear-key').checked,clear_ca:$('clear-ca').checked,demo:false};const ok=await save(config);if(ok){$('clear-key').checked=false;$('clear-ca').checked=false;message('API 配置已保存。上方“连接测试”会自动显示成功或失败；无需重复输入密钥。');}};
+ $('save-api').onclick=async()=>{const config={local_api:$('mode').value==='local',console_url:$('console-url').value.trim(),api_key:$('api-key').value,ca_pem:$('ca').value,clear_api_key:$('clear-key').checked,clear_ca:$('clear-ca').checked,demo:false};const ok=await save(config);if(ok){$('host-id').value=current.host_id;$('site-id').value=current.site_id;renderStatus(current);$('clear-key').checked=false;$('clear-ca').checked=false;message('API 配置已保存。上方“连接测试”会自动显示成功或失败；无需重复输入密钥。');}};
  $('sites').onchange=()=>{const site=current.sites?.[Number($('sites').value)];if($('sites').value&&site){$('host-id').value=site.host_id;$('site-id').value=site.site_id;}};
  $('save-site').onclick=()=>save({host_id:$('host-id').value.trim(),site_id:$('site-id').value.trim()});
  $('brightness').oninput=()=>{$('brightness-value').textContent=$('brightness').value+'%';};

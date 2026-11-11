@@ -330,7 +330,12 @@ static bool on_event(void *user,ujson_event_t ev,const char *path,const char *v)
         if(ev==UJSON_OBJECT&&!strcmp(q,"/data/#"))p->site[0]=p->reference[0]=0;
         if(scalar&&!strcmp(q,"/data/#/id"))COPY(p->site,v);
         if(scalar&&!strcmp(q,"/data/#/type"))COPY(p->reference,v);
-        if(ev==UJSON_END_OBJECT&&!strcmp(q,"/data/#")){p->rows++;if(p->rows==1){COPY(p->config_id,p->site);COPY(p->config_type,p->reference);}}
+        if(ev==UJSON_END_OBJECT&&!strcmp(q,"/data/#")){
+            p->rows++;if(p->rows==1){COPY(p->config_id,p->site);COPY(p->config_type,p->reference);}
+            if(p->config_count<UNIFI_SDWAN_CONFIG_MAX){
+                unifi_sdwan_config_t *c=&p->configs[p->config_count++];COPY(c->id,p->site);COPY(c->type,p->reference);
+            }else p->truncated=true;
+        }
     }else if(p->kind==UNIFI_PARSE_SDWAN_STATUS){
         if(ev==UJSON_OBJECT&&!strcmp(q,"/data"))p->schema_ok=true;
         if(!strncmp(q,"/data/status/",13)){
@@ -360,14 +365,15 @@ static bool on_event(void *user,ujson_event_t ev,const char *path,const char *v)
             if((scalar||ev==UJSON_OBJECT)&&!strcmp(q,"/data/status/sites/#/warnings/#"))p->backup_issues++;
             if(ev==UJSON_END_OBJECT&&!strcmp(q,"/data/status/sites/#")){
                 p->out->sdwan.peers++;
-                if(site_match(p)){p->out->sdwan.errors+=p->primary_issues;p->out->sdwan.warnings+=p->backup_issues;}
+                if(site_match(p)){p->sd_has_host=true;p->out->sdwan.errors+=p->primary_issues;p->out->sdwan.warnings+=p->backup_issues;}
             }
             return true;
         }
         bool endpoint=!strcmp(q,"/data/hubs/#")||!strcmp(q,"/data/spokes/#");
-        if(ev==UJSON_OBJECT&&endpoint){p->host[0]=0;p->primary_configured=p->backup_configured=p->primary_issues_known=p->backup_issues_known=false;p->primary_issues=p->backup_issues=0;p->primary_latency=p->backup_latency=NAN;}
+        if(ev==UJSON_OBJECT&&endpoint){p->host[0]=p->site[0]=0;p->primary_configured=p->backup_configured=p->primary_issues_known=p->backup_issues_known=false;p->primary_issues=p->backup_issues=0;p->primary_latency=p->backup_latency=NAN;}
         if(scalar&&(!strcmp(q,"/data/hubs/#/hostId")||!strcmp(q,"/data/spokes/#/hostId")))COPY(p->host,v);
-        if(scalar&&suffix(q,"/hostId")&&!strcmp(v,p->wanted_host))p->sd_has_host=true;
+        if(scalar&&(!strcmp(q,"/data/hubs/#/siteId")||!strcmp(q,"/data/spokes/#/siteId")))COPY(p->site,v);
+        if(ev==UJSON_END_OBJECT&&endpoint&&site_match(p))p->sd_has_host=true;
         if(ev==UJSON_END_OBJECT&&!strcmp(q,"/data/hubs/#"))p->out->sdwan.hubs++;
         if(ev==UJSON_END_OBJECT&&!strcmp(q,"/data/spokes/#"))p->out->sdwan.spokes++;
         if(ev==UJSON_END_OBJECT&&suffix(q,"/errors/#"))p->out->sdwan.errors++;
@@ -381,7 +387,7 @@ static bool on_event(void *user,ujson_event_t ev,const char *path,const char *v)
         if(ev==UJSON_OBJECT&&suffix(q,"/secondaryWanStatus/internetIssues/#"))p->backup_issues++;
         if(ev==UJSON_END_ARRAY&&suffix(q,"/primaryWanStatus/internetIssues"))p->primary_issues_known=true;
         if(ev==UJSON_END_ARRAY&&suffix(q,"/secondaryWanStatus/internetIssues"))p->backup_issues_known=true;
-        if(ev==UJSON_END_OBJECT&&endpoint&&host_match(p)){
+        if(ev==UJSON_END_OBJECT&&endpoint&&site_match(p)){
             unifi_sdwan_t *sw=&p->out->sdwan;
             /* Report absence of API issues, never infer link UP just from wanId. */
             COPY(sw->primary,p->primary_configured?(p->primary_issues_known?(p->primary_issues?"issues":"no_issues"):"configured"):"unknown");

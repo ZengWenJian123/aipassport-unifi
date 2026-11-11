@@ -81,8 +81,8 @@ int main(void)
     assert(!unifi_generation_current_or_newer(1,2));
     assert(unifi_generation_current_or_newer(0,UINT32_MAX));
     assert(!unifi_generation_current_or_newer(UINT32_MAX,0));
-    assert(!strcmp(unifi_site_display_name("Demo Office"),"Demo Office"));
-    assert(!strcmp(unifi_site_display_name("Demo Home"),"Demo Home"));
+    assert(!strcmp(unifi_site_display_name("Example Office"),"Example Office"));
+    assert(!strcmp(unifi_site_display_name("Example Home"),"Example Home"));
     assert(!strcmp(unifi_site_display_name("Another site"),"Another site"));
     unifi_snapshot_t s;unifi_connection_t c;unifi_fixture(&s,&c);
     unifi_nav_t clock_nav={0};render(&clock_nav,&s,&c);assert(!strcmp(clock_text,"00:01"));
