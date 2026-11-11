@@ -1,0 +1,8 @@
+menu "UniFi Passport"
+    config UNIFI_DEMO_MODE
+        bool "Start with demo data when no NVS configuration exists"
+        default n
+        help
+            Demo data are always explicitly labelled. Real mode starts a
+            temporary configuration hotspot when not configured.
+endmenu

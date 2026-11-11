@@ -15,6 +15,69 @@
 - 添加字库前评估 Flash 与内部 RAM 影响；ESP32-C3 无 PSRAM。
 - 不提交许可不允许分发的字库。
 
+### UniFi 仪表盘中文字库
+
+[`fonts/unifi_fonts.h`](fonts/unifi_fonts.h) 声明应用专用字体
+`unifi_font_12`、`unifi_font_14`、`unifi_font_18`、`unifi_font_24`。
+将对应的 `.c` 文件编译到应用中，并在每个文字控件上明确选择字体。
+这些资源不会替换 BSP 字体。
+
+| 字体 | 行高 / 从行底计算的基线 | 覆盖范围 | 位图字节数 |
+| --- | --- | --- | --- |
+| `unifi_font_12` | 16 / 4 px | 6,893 个码点 | 515,553 |
+| `unifi_font_14` | 18 / 5 px | 6,893 个码点 | 679,001 |
+| `unifi_font_18` | 22 / 5 px | 6,893 个码点 | 1,104,448 |
+| `unifi_font_24` | 28 / 7 px | 95 个可打印 ASCII 字符 | 10,627 |
+
+三个中文字号均覆盖 GB2312 一级、二级的全部 6,763 个汉字、ASCII、标点、
+箭头和应用固定文案，不代表支持任意 Unicode 姓名或 emoji。
+动态内容的未支持码点须替换为 `?`，不能截断 UTF-8 字符；
+`unifi_font_has_codepoint()` 用于检查实际字体覆盖。
+24 px 只用于 ASCII 数字和单位，中文单位应另用较小字号；图标单独绘制。
+
+可再分发的固定输入为
+[`fonts/unifi_NotoSansCJKsc-Regular.otf`](fonts/unifi_NotoSansCJKsc-Regular.otf)，
+即 Noto Sans CJK SC Regular 2.004，来自
+[官方上游提交](https://github.com/notofonts/noto-cjk/tree/523d033d6cb47f4a80c58a35753646f5c3608a78)。
+SHA-256：`2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b`。
+源字体与派生字体使用 [SIL OFL 1.1](fonts/unifi_OFL.txt)，再分发时保留该许可。
+16 MB 的源 OTF 只是生成素材，**不嵌入固件**。
+
+[`tools/generate_unifi_fonts.py`](../tools/generate_unifi_fonts.py) 使用
+Pillow 11.3.0 / FreeType 2.13.3 栅格化，再写入原始 4bpp：高半字节在前、
+字形起点字节对齐、行末不填充。cmap 采用连续 ASCII 的 `FORMAT0_TINY`
+加排序后的 `SPARSE_TINY`。位图、字形描述符与 cmap 数组均为 Flash 中的
+`const`。须启用 `CONFIG_LV_FONT_FMT_TXT_LARGE=y`，因为 18 px 位图超过
+默认 20 位索引上限。四种字体连同大字形描述符约占 2.68 MB Flash，运行时仅需
+单字形绘制缓冲；最终链接大小及堆占用仍须在目标设备核对。
+
+```bash
+python3 -m venv build/font-tools
+build/font-tools/bin/pip install Pillow==11.3.0 fonttools==4.60.1
+build/font-tools/bin/python tools/generate_unifi_fonts.py
+python3 tools/generate_unifi_fonts.py --check
+python3 tests/test_unifi_fonts.py
+build/font-tools/bin/python tools/generate_unifi_fonts.py --check --verify-raster
+```
+
+生成器读取 `main/unifi*.c`、`main/unifi*.h` 的字符串字面量（包含
+`unifi_view.c`），并保留
+[`fonts/unifi_font_manifest.json`](fonts/unifi_font_manifest.json)
+中已有的额外码点。新固定文案必须通过 12、14、18 px 的覆盖检查。
+仅用 Python 标准库即可验证真实 C 文件中的 cmap、字形边界、基线、字节哈希、
+非空字形、缺字反例和奇数宽度的半字节打包。栅格验证会回读每个 C 字形，
+解码后逐像素对照重新栅格化的源字体。生成器还在已忽略的
+`build/unifi-fonts/` 下输出从 C 位图绘制的样张 PNG 和 JSON 报告。
+这些主机检查不等于真机字形显示验证。
+
+还可经过**实际 LVGL 9.5 渲染器**验证：安装项目托管 LVGL 组件后运行
+`build/font-tools/bin/python tools/render_unifi_preview.py`。
+该工具编译与固件相同的应用视图、绘制代码和字体，使用 24 KiB LVGL 堆及
+RGB565 分块帧缓冲，测试 UTF-8 省略，并将代表字形的实渲染像素与原始
+4bpp 位图逐像素对照。九个主页面和详情、异常、配网状态的原生 240 × 320
+PNG 保存在已忽略的 `build/unifi-preview/`，另有最近邻放大的拼图供人工
+检查。需 CMake、主机 C/C++ 编译器及 Pillow，不访问网络或连接设备。
+
 ## 图片（images）
 
 可复用的源图与生成的显示资产放在 `images/`。

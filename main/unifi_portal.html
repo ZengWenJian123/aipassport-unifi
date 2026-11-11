@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Passport · 本地设置</title>
+<style>
+:root{color-scheme:dark;font:15px/1.55 system-ui,"PingFang SC",sans-serif;background:#111315;color:#edf0f4}*{box-sizing:border-box}body{max-width:480px;margin:0 auto;padding:20px 18px}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #343a43;padding-bottom:16px;margin-bottom:18px}h1{font-size:21px;margin:0}h2{font-size:19px;margin:0 0 8px}p{margin:8px 0 18px;color:#b0bac8;font-size:13px}small{font-size:12px;color:#b0bac8}.badge{font-size:11px;border:1px solid #3f6691;padding:3px 7px;border-radius:5px;color:#8ac1ff}.steps{display:flex;gap:6px;margin:16px 0}button{font:inherit;border:1px solid #475466;background:#222a35;color:#eef2f8;border-radius:7px;padding:10px 13px;min-height:44px;cursor:pointer}button:disabled{opacity:.45;cursor:default}button.primary{background:#2477d4;border-color:#68a7ec}button.link{background:none;border:0;color:#8ac1ff;padding:5px 0;min-height:32px}.steps button{flex:1;padding:7px 3px;font-size:12px}.steps button.active{border-color:#7cb6f7;color:#8ac1ff;background:#1a304a}label{display:block;margin-bottom:15px}label>span{display:block;margin-bottom:6px}input,select,textarea{display:block;width:100%;padding:10px;border:1px solid #4d5868;border-radius:6px;background:#1d2229;color:#f0f3f8;font-family:inherit;font-size:16px;line-height:1.4;min-height:44px}textarea{min-height:105px;font-family:monospace;font-size:13px;resize:vertical}input[type=checkbox]{width:auto;min-height:0;display:inline;margin-right:7px}input[type=range]{padding:0;accent-color:#67afff}.check{font-size:13px;display:flex;align-items:center;gap:4px;margin:9px 0 16px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.actions{display:flex;gap:10px;margin:20px 0 12px}.actions button{flex:1}.message{font-size:13px;padding:11px 0;min-height:40px;color:#9bcbff;overflow-wrap:anywhere}.error{color:#ffaaaa}.good{color:#72dda0}footer{border-top:1px solid #343a43;font-size:11px;color:#a6b0bd;margin-top:20px;padding-top:12px}.details{margin-top:16px}.warn{color:#edcd87}details summary{cursor:pointer;color:#a7cfff;margin-bottom:12px}.hidden,[hidden]{display:none!important}dl{margin:14px 0}dl>div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #303742;padding:10px 0;font-size:13px}dt{color:#b0bac8}dd{margin:0;overflow-wrap:anywhere;text-align:right}input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #77b6ff;outline-offset:2px}#networks{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}#networks button{font-size:13px;text-align:left;min-height:38px}.secret-note{margin-top:5px}output{float:right}a{color:#8ac1ff}
+</style>
+<header><div><h1>AI Passport</h1><small>UniFi 网络监控 · 本地设置</small></div><span class="badge">临时设置模式</span></header>
+<style>fieldset{border:0;margin:0;padding:0;min-width:0}#api-detail,#query-detail,#site-hint{display:block;overflow-wrap:anywhere;margin-top:6px}#portal-state{flex:1}</style>
+<div class="row"><small id="portal-state" role="status">正在读取设备配置…</small><button id="refresh-status" type="button" class="link">刷新状态</button></div>
+<fieldset id="settings" disabled>
+ <nav class="steps" aria-label="配置步骤"><button type="button" data-step="0" class="active">1 · Wi-Fi</button><button type="button" data-step="1">2 · UniFi</button><button type="button" data-step="2">3 · 显示</button></nav>
+ <section id="step-0">
+  <div class="row"><h2>连接 Wi-Fi</h2><button class="link" id="scan" type="button">扫描网络</button></div>
+  <p>仅支持 2.4 GHz。选取扫描结果，或直接输入网络名。</p>
+  <div id="networks"></div>
+  <label><span>网络名称（SSID）</span><input id="ssid" maxlength="32" autocomplete="off" placeholder="Wi-Fi 名称"></label>
+  <label><span>Wi-Fi 密码</span><input id="password" type="password" maxlength="64" autocomplete="off" placeholder="留空保留现有密码"><small class="secret-note" id="password-status"></small></label>
+  <label class="check"><input id="clear-password" type="checkbox">清除密码，连接开放网络</label>
+  <div class="actions"><button id="save-wifi" class="primary" type="button">保存并连接</button><button id="to-api" type="button">下一步</button></div>
+ </section>
+ <section id="step-1" hidden>
+  <h2>连接 UniFi</h2><p>API Key 保存在设备中。重启后自动使用，留空即可保留，无需重复输入。</p>
+  <label><span>连接方式</span><select id="mode"><option value="cloud">云端 Site Manager API（推荐）</option><option value="local">局域网 Network API</option></select></label>
+  <div id="local-fields" hidden>
+   <label><span>控制台 HTTPS 地址</span><input id="console-url" autocomplete="off" placeholder="https://192.168.10.1"><small>只允许局域网私有 IPv4 地址，可指定端口。</small></label>
+   <label><span>信任的证书 / CA（PEM）</span><textarea id="ca" autocomplete="off" maxlength="2047" placeholder="-----BEGIN CERTIFICATE-----"></textarea><small id="ca-status">留空保留已有证书；不跳过 TLS 校验。</small></label>
+   <label class="check"><input id="clear-ca" type="checkbox">清除已保存的证书</label>
+  </div>
+  <label><span>UniFi API Key</span><input id="api-key" type="password" maxlength="256" autocomplete="off" spellcheck="false" placeholder="粘贴密钥；留空保留现有值"><small id="key-status"></small></label>
+  <label class="check"><input id="clear-key" type="checkbox">清除已保存的 API Key</label>
+  <button id="save-api" class="primary" type="button">保存并测试连接</button>
+  <div id="connection-result" class="message" role="status" aria-live="polite">尚未测试连接</div>
+  <small id="connection-time"></small>
+  <dl><div><dt>Wi-Fi</dt><dd id="wifi-state">待连接</dd></div><div><dt>监控数据</dt><dd id="api-state">尚未查询</dd></div></dl>
+  <aside aria-label="连接诊断"><strong>连接诊断</strong><small id="query-detail">尚未发起请求</small><small id="api-detail">暂无错误</small></aside>
+  <label><span>监控站点</span><select id="sites" disabled><option value="">等待设备状态</option></select><small id="site-hint" role="status"></small></label>
+  <details class="details"><summary>手动指定站点（可选）</summary><label><span>Host ID / Console ID</span><input id="host-id" maxlength="95" autocomplete="off"></label><label><span>Site ID</span><input id="site-id" maxlength="63" autocomplete="off"></label></details>
+  <div class="actions"><button id="save-site" type="button">保存站点</button><button type="button" id="to-display">下一步</button></div>
+ </section>
+ <section id="step-2" hidden>
+  <h2>显示与更新</h2>
+  <label><span>状态刷新间隔</span><select id="poll"><option value="10">10 秒</option><option value="15">15 秒</option><option value="30">30 秒</option><option value="60">60 秒</option><option value="120">120 秒</option><option value="300">5 分钟</option></select><small>按每轮开始时间计算；网络较慢时会延长。ISP 指标每 5 分钟采样，历史图表不会每秒变化。</small></label>
+  <label><span>屏幕亮度 <output id="brightness-value">70%</output></span><input id="brightness" type="range" min="10" max="100" step="5" value="70"></label>
+  <label><span>自动息屏</span><select id="screen-timeout"><option value="30">30 秒</option><option value="60" selected>1 分钟（默认）</option><option value="120">2 分钟</option><option value="300">5 分钟</option><option value="0">始终亮屏</option></select><small>无按键操作后关闭背光，后台继续监控。任意键唤醒；第一次按键不切页、不执行菜单操作。</small></label>
+  <p>顶部时钟显示北京时间（24 小时制）；联网校时前显示 --:--。</p>
+  <label class="check"><input id="demo" type="checkbox">演示模式（仅显示模拟数据）</label>
+  <div class="actions"><button id="save-display" class="primary" type="button">保存显示设置</button><button id="close" type="button">完成并关闭热点</button></div>
+  <p>关闭后保持设备 Wi-Fi 连接。需要修改时，在设备“设置”页重新开启配置热点。</p>
+ </section>
+</fieldset>
+<div id="message" class="message" role="status" aria-live="polite"></div>
+<footer>设置热点最多开放 10 分钟，仅允许一台手机连接。超时后请在设备重新开启热点，再连接并打开此页面。配置保存到设备 NVS / Flash；当前版本未启用存储加密。</footer>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id);let current={},timer=null,pending=false,scanning=false,filled=false,refreshing=false,closed=false;
+ const secrets=['password','api-key','ca'];
+ const clearSecrets=()=>secrets.forEach(id=>{$(id).value='';});
+ const message=(text,error=false)=>{$('message').textContent=text;$('message').className='message'+(error?' error':'');};
+ async function request(path,body,method='GET'){
+  const headers={};if(body!==undefined)headers['Content-Type']='application/json';
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),8000);
+  try{const response=await fetch(path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',credentials:'omit',signal:controller.signal});
+   const data=await response.json();if(!response.ok)throw Error(data.error||'请求失败');return data;
+  }finally{clearTimeout(timeout);}
+ }
+ function step(n){clearSecrets();document.querySelectorAll('[data-step]').forEach(button=>button.classList.toggle('active',+button.dataset.step===n));[0,1,2].forEach(i=>$('step-'+i).hidden=i!==n);}
+ function apiState(data){
+  const count=data.sites.length,error=data.api_error||'';
+  if(data.demo)return ['演示模式','演示模式不会查找真实站点；保存 API 配置后会退出演示。'];
+  if(!data.wifi_connected)return ['等待 Wi-Fi 连接','先在第 1 步连接 Wi-Fi，再查询站点。'];
+  if(!data.api_key_set)return ['尚未配置 API Key','输入 API Key，点击“保存并测试连接”。'];
+  if(!data.time_valid)return ['等待网络校时','Wi-Fi 已连接，设备正在校准时间；完成后才能建立 HTTPS 连接。'];
+  if(data.api_refreshing&&!error)return count?['正在更新监控数据','站点已找到，可先选择并保存；其他监控数据仍在更新。']:['正在查询站点','设备正在请求 API；页面会自动更新，请稍候。'];
+  if(/Selected site unavailable/i.test(error))return ['原监控站点不可用','请从已发现的站点中重新选择，然后点击“保存站点”。'];
+  if(/No sites available for this API key/i.test(error))return ['未发现可访问站点','此 API Key 未返回可用站点，请检查所属账号和站点访问权限。'];
+  if(data.api_ok)return count?['本轮更新完成','选择需要监控的站点，然后保存。']:['查询成功，未返回站点','API 未返回可用站点，请检查密钥所属账号及站点访问权限。'];
+  if(data.connection_ok&&count&&error)return ['部分数据暂不可用','站点 API 连接正常；部分查询失败或超时，已保留可用数据。具体原因见诊断。'];
+  const code=Number(error.match(/HTTP\s+(\d{3})/)?.[1])||Number(data.api_http)||0;
+  if(code===401)return ['API 身份验证失败','请检查 API Key 是否有效，以及是否匹配所选连接方式。'];
+  if(code===403)return ['API 访问被拒绝','请检查密钥所属账号、站点权限及对应 API 的访问权限。'];
+  if(code===429)return ['API 请求受限，等待重试','设备会按服务器要求稍后重试，请勿反复保存。'];
+  if(/DNS|resolve|getaddrinfo|HOST_NOT_FOUND/i.test(error))return ['域名解析失败','请检查设备所在 Wi-Fi 的 DNS 和互联网连接。'];
+  if(/TLS|SSL|CERT/i.test(error))return ['HTTPS 连接失败','请检查网络连通性；局域网模式还需检查控制台地址和证书。'];
+  if(/TIMEOUT|timed out/i.test(error))return ['API 连接超时','设备未在限时内收到响应，请检查网络后等待重试。'];
+  if(error)return ['API 查询未完成',count?'已有站点可选择，部分数据查询失败；详见上方诊断。':'查询遇到错误，尚不能判断是否存在可访问站点；详见上方诊断。'];
+  return ['正在查询站点','设备正在请求 API；页面会自动更新，请稍候。'];
+ }
+ function connectionStatus(data){
+  const result=$('connection-result');result.className='message';
+  $('connection-time').textContent=data.connection_epoch?'最近测试：'+new Date(data.connection_epoch*1000).toLocaleString('zh-CN',{hour12:false}):'';
+  if(!data.api_key_set){result.textContent='尚未配置 API Key';return;}
+  if(data.connection_tested){
+   result.classList.add(data.connection_ok?'good':'error');
+   result.textContent=data.connection_ok?'连接测试成功 · 密钥可访问站点 API（HTTP 200）':'连接测试失败 · '+(data.connection_error||('HTTP '+data.connection_http));
+   if(data.connection_ok&&!data.sites.length)result.textContent+='；此密钥未返回可访问站点';
+   return;
+  }
+  result.textContent=data.demo?'演示模式，尚未测试 API':!data.wifi_connected?'等待 Wi-Fi，联网后自动测试':!data.time_valid?'等待网络校时，完成后自动测试':'正在测试连接，请稍候…';
+ }
+ function renderStatus(data){
+  current=data;$('settings').disabled=false;$('portal-state').textContent='已连接设备设置后台';$('portal-state').className='good';$('password-status').textContent=data.password_set?'已有密码；留空保持不变':'尚未设置密码';$('key-status').textContent=data.api_key_set?'API Key 已保存到设备；重启保留，留空无需重填':'尚未配置 API Key';$('ca-status').textContent=data.ca_set?'已有信任证书；留空保持不变':'未配置证书；将使用内置受信 CA，不跳过验证';
+  $('wifi-state').textContent=data.wifi_connected?'已连接 · '+data.ip:(data.error||'正在连接');
+  connectionStatus(data);
+  const [state,hint]=apiState(data);$('api-state').textContent=state;$('site-hint').textContent=hint;
+  const stages={'Console names':'控制台名称','Sites':'站点列表','Network site mapping':'Network 站点映射','Devices':'设备清单','Network devices':'Network 设备','Device statistics':'设备流量','Clients':'客户端 / VPN','ISP metrics':'24 小时 ISP 指标','7-day estimates':'七天流量估算','SD-WAN':'SD-WAN 配置','SD-WAN status':'SD-WAN 状态','Current WAN rates':'WAN 当前速率','VPN sessions':'在线 VPN 会话','WAN link status':'WAN 线路状态'};
+  $('query-detail').textContent=data.query_stage?'最近请求：'+(stages[data.query_stage]||data.query_stage)+' · HTTP '+(data.query_http||'未收到响应')+' · '+((data.query_duration_ms||0)/1000).toFixed(1)+' 秒 · 本轮第 '+data.query_count+' 项':'尚未发起请求';
+  $('api-detail').textContent=data.api_error?'诊断：'+data.api_error:'暂无错误'+(data.api_refreshing?'；其余数据仍在查询':'');
+  const targetHost=filled?$('host-id').value:data.host_id,targetSite=filled?$('site-id').value:data.site_id;const sites=$('sites');sites.replaceChildren();
+  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent=data.sites.length?'请选择站点':state;sites.append(placeholder);sites.disabled=!data.sites.length;
+  data.sites.forEach((site,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=site.name;sites.append(option);});
+  const selected=data.sites.findIndex(site=>site.host_id===targetHost&&site.site_id===targetSite);if(selected>=0)sites.value=String(selected);
+  if(!filled){$('ssid').value=data.ssid;$('mode').value=data.local_api?'local':'cloud';$('console-url').value=data.console_url;$('host-id').value=data.host_id;$('site-id').value=data.site_id;$('poll').value=String(data.poll_seconds);$('brightness').value=data.brightness;$('screen-timeout').value=String(data.screen_timeout_sec??60);$('brightness-value').textContent=data.brightness+'%';$('demo').checked=data.demo;$('local-fields').hidden=!data.local_api;filled=true;}
+  if(scanning&&!data.scanning){scanning=false;$('networks').replaceChildren();data.networks.forEach(ap=>{const b=document.createElement('button');b.type='button';b.textContent=ap.ssid+' · '+ap.rssi+' dBm'+(ap.open?' · 开放':'');b.onclick=()=>{$('ssid').value=ap.ssid;$('clear-password').checked=ap.open;};$('networks').append(b);});message(data.scan_error||'扫描完成',!!data.scan_error);}
+ }
+ async function refresh(){if(pending||refreshing||closed)return;refreshing=true;try{renderStatus(await request('/api/status'));}catch(error){$('portal-state').textContent='设备暂时不可达；热点可能已关闭，请在设备重新开启并连接 Passport 热点后刷新。';$('portal-state').className='error';}finally{refreshing=false;}}
+ async function save(config){
+  if(pending)return false;pending=true;const sequence=current.save_sequence||0;message('正在写入设备…');
+  try{await request('/api/config',config,'POST');clearSecrets();
+   for(let i=0;i<16;i++){await new Promise(resolve=>setTimeout(resolve,500));const data=await request('/api/status');renderStatus(data);if(data.save_sequence>sequence&&!data.saving){if(data.save_error)throw Error(data.save_error);message('已保存到设备。');return true;}}
+   throw Error('保存未完成，请检查设备状态后重试');
+  }catch(error){message('保存失败：'+error.message,true);return false;}finally{clearSecrets();pending=false;}
+ }
+ $('refresh-status').onclick=refresh;
+ document.querySelectorAll('[data-step]').forEach(button=>button.onclick=()=>step(+button.dataset.step));
+ $('scan').onclick=async()=>{try{scanning=true;await request('/api/scan',undefined,'POST');message('正在扫描 2.4 GHz 网络…');}catch(error){scanning=false;message('扫描失败，请稍后重试。',true);}};
+ $('save-wifi').onclick=async()=>{if(!$('ssid').value){message('请输入 Wi-Fi 名称。',true);return;}const ok=await save({ssid:$('ssid').value,password:$('password').value,clear_password:$('clear-password').checked});if(ok){$('clear-password').checked=false;message('Wi-Fi 配置已保存，正在连接；请保持连接 Passport 热点。');}};
+ $('to-api').onclick=()=>step(1);$('to-display').onclick=()=>step(2);
+ $('mode').onchange=()=>{clearSecrets();$('local-fields').hidden=$('mode').value!=='local';};
+ $('save-api').onclick=async()=>{const config={local_api:$('mode').value==='local',console_url:$('console-url').value.trim(),api_key:$('api-key').value,ca_pem:$('ca').value,clear_api_key:$('clear-key').checked,clear_ca:$('clear-ca').checked,demo:false};const ok=await save(config);if(ok){$('clear-key').checked=false;$('clear-ca').checked=false;message('API 配置已保存。上方“连接测试”会自动显示成功或失败；无需重复输入密钥。');}};
+ $('sites').onchange=()=>{const site=current.sites?.[Number($('sites').value)];if($('sites').value&&site){$('host-id').value=site.host_id;$('site-id').value=site.site_id;}};
+ $('save-site').onclick=()=>save({host_id:$('host-id').value.trim(),site_id:$('site-id').value.trim()});
+ $('brightness').oninput=()=>{$('brightness-value').textContent=$('brightness').value+'%';};
+ $('save-display').onclick=()=>save({poll_seconds:Number($('poll').value),brightness:Number($('brightness').value),screen_timeout_sec:Number($('screen-timeout').value),demo:$('demo').checked});
+ $('close').onclick=async()=>{if(pending){message('请等待保存完成。');return;}try{await request('/api/close',undefined,'POST');}catch(error){}closed=true;if(timer)clearInterval(timer);clearSecrets();$('settings').hidden=true;$('refresh-status').hidden=true;$('portal-state').textContent='设置已结束';message('已请求关闭设置热点，请查看设备屏幕。');};
+ window.addEventListener('pagehide',()=>{clearSecrets();if(timer)clearInterval(timer);});
+ window.addEventListener('pageshow',event=>{if(event.persisted&&!closed){refresh();if(timer)clearInterval(timer);timer=setInterval(refresh,2500);}});
+ refresh();timer=setInterval(refresh,2500);
+})();
+</script>
+</html>

@@ -82,6 +82,22 @@ run_static_checks() {
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_verify_firmware.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_archive_firmware.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_install_passport_skills.py
+    "${CC:-cc}" -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Werror -Imain -Itests \
+        tests/test_unifi_ui.c main/unifi_model.c main/unifi_view.c main/unifi_demo.c \
+        -lm -o "${test_dir}/test_unifi_ui"
+    "${test_dir}/test_unifi_ui"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_unifi_demo.c main/unifi_demo.c -o "${test_dir}/test_unifi_demo"
+    "${test_dir}/test_unifi_demo"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_unifi_settings_validation.c -o "${test_dir}/test_unifi_settings_validation"
+    "${test_dir}/test_unifi_settings_validation"
+    "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -Imain \
+        tests/test_unifi_portal_access.c -o "${test_dir}/test_unifi_portal_access"
+    "${test_dir}/test_unifi_portal_access"
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_unifi_api.py
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_unifi_fonts.py
+    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_unifi_gateway.py
     rm -rf "${test_dir}"
     echo "Host tests: PASS"
 }
@@ -95,7 +111,7 @@ run_firmware_checks() (
     fi
 
     validation_build_dir="$(mktemp -d /tmp/ai-passport-firmware.XXXXXX)"
-    trap 'case "${validation_build_dir}" in /tmp/ai-passport-firmware.*) rm -rf -- "${validation_build_dir}" ;; esac' EXIT
+    trap "$(printf 'rm -rf -- %q' "${validation_build_dir}")" EXIT
 
     SDKCONFIG_DEFAULTS="${repo_root}/sdkconfig.defaults" \
         idf.py -B "${validation_build_dir}" \

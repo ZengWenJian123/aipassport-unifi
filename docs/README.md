@@ -42,6 +42,11 @@ it anything—from a pocket companion to something no one has imagined yet.
 | --- | --- | --- |
 | Open firmware and reusable examples give you room to shape your own experience. | Start from an idea and follow clear guides to make it real, even if this is your first build. | Make a companion, a tool, a game—or anything you can imagine. |
 
+This repository runs the [UniFi Passport application](development/unifi-dashboard.md),
+with direct HTTPS monitoring and an on-device setup portal. Start with the
+application guide for setup, usage and implementation details. The platform documentation below describes the upstream
+AI Passport baseline; its references to `main` refer to upstream, not this app.
+
 ## Find your starting point
 
 | I want to… | Start here |

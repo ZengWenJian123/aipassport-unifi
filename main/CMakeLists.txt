@@ -1,16 +1,11 @@
 idf_component_register(
-    SRCS "main.c"
-         "demo_navigation.c"
-         "ui_pixel.c"
-         "ui_pixel_math.c"
-         "demo_display.c"
-         "demo_button.c"
-         "demo_audio.c"
-         "demo_battery.c"
-         "demo_radio.c"
-         "demo_wifi.c"
-         "demo_ble.c"
-         "demo_low_power.c"
-    INCLUDE_DIRS "."
-    REQUIRES bsp bt esp_event esp_hw_support esp_netif esp_timer esp_wifi nvs_flash
+    SRCS "main.c" "unifi_dashboard.c" "unifi_model.c" "unifi_view.c" "unifi_lvgl.c"
+         "unifi_api.c" "unifi_api_parse.c" "unifi_json_stream.c" "unifi_demo.c"
+         "unifi_settings.c" "demo_radio.c"
+         "../assets/fonts/unifi_font_12.c" "../assets/fonts/unifi_font_14.c"
+         "../assets/fonts/unifi_font_18.c" "../assets/fonts/unifi_font_24.c"
+    INCLUDE_DIRS "." "../assets/fonts"
+    REQUIRES bsp esp_event esp_netif esp_timer esp_wifi nvs_flash
+             esp_http_client esp_http_server json lwip mbedtls esp-tls
+    EMBED_FILES "unifi_portal.html"
 )

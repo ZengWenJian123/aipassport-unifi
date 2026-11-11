@@ -5,6 +5,15 @@ managed_components/
 .vscode/
 .idea/
 
+# Local caches and configuration; keep shareable environment templates.
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+
 # Generated repository-local links; canonical skill sources live in skills/.
 /.agents/skills/passport-develop
 /.agents/skills/passport-setup
