@@ -130,7 +130,7 @@ build/firmware/<sha256>/           配套镜像、ELF、MAP 和清单
 的合并镜像：
 
 ```bash
-python -m esptool --chip esp32c3 --port PORT write-flash \
+python -m esptool --chip esp32c3 --port PORT write_flash \
   0x0 build/FoloToy-AI-Passport-full.bin
 ```
 

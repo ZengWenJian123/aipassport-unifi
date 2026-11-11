@@ -143,7 +143,7 @@ For a blank device or an intentional complete refresh, replace `PORT` with
 your serial port and flash the verified merged image:
 
 ```bash
-python -m esptool --chip esp32c3 --port PORT write-flash \
+python -m esptool --chip esp32c3 --port PORT write_flash \
   0x0 build/FoloToy-AI-Passport-full.bin
 ```
 
