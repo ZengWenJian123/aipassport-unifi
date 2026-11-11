@@ -11,6 +11,9 @@
 ESP32-C3 通过 HTTPS 直接连接 UniFi。手机连接设备的临时设置热点，即可配置
 Wi-Fi 和 API Key，无需电脑、NAS 或 Python 网关常驻运行。
 
+本应用位于 `feature/unifi-dashboard` 分支；仓库的 `main` 分支保留上游固件基线
+和项目入口。
+
 [快速开始](#快速开始) · [页面与按键](#页面与按键) ·
 [编译](#编译与验证) · [应用详细说明](docs/development/unifi-dashboard.zh_CN.md)
 
@@ -103,7 +106,7 @@ Wi-Fi 和 API Key，无需电脑、NAS 或 Python 网关常驻运行。
 ## 编译与验证
 
 ```bash
-git clone https://github.com/ZengWenJian123/aipassport-unifi.git
+git clone --branch feature/unifi-dashboard https://github.com/ZengWenJian123/aipassport-unifi.git
 cd aipassport-unifi
 ```
 

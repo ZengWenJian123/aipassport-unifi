@@ -12,6 +12,9 @@ The ESP32-C3 connects directly to UniFi over HTTPS. Configure Wi-Fi and the API
 key from your phone through the device's temporary setup hotspot; no always-on
 computer, NAS or Python gateway is required.
 
+This application lives on `feature/unifi-dashboard`. The repository's `main`
+branch keeps the upstream firmware baseline and a project index.
+
 [Quick start](#quick-start) · [Pages and controls](#pages-and-controls) ·
 [Build](#build-and-validate) · [Application details](docs/development/unifi-dashboard.md)
 
@@ -113,7 +116,7 @@ backoff can delay fresh data.
 ## Build and validate
 
 ```bash
-git clone https://github.com/ZengWenJian123/aipassport-unifi.git
+git clone --branch feature/unifi-dashboard https://github.com/ZengWenJian123/aipassport-unifi.git
 cd aipassport-unifi
 ```
 
